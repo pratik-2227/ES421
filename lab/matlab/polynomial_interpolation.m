@@ -1,46 +1,87 @@
-N = 10;
-x = linspace(1,10,N); % check the dimension
-y = randi(10,[1,N]);
-
-y = y'; %changing from row to column matrix 
-
-% prepare G matrix  - Dimension (N+1) x (N+1)
-%    [x0^0  x0^1  x1^2 ..... x1^N]
-%    |x1^0  x1^1  x1^2 ..... x1^N|
-%    |x2^0  x2^1  x2^2 ..... x2^N|
-%G = |x3^0  x3^1  x3^2 ..... x3^N|
-%    |:  :   :     :     :    :  |
-%    [xN^0  xN^1  xN^2 ..... xN^N]
-
-for i=1:N
-  for j=1:N
-    G(i,j)=x(i).^(j-1);
-  end
-end
-
-data = y;
-
-%finding the model parameters 
-m = inv(G)*data; % m is column vector (N+1 x 1)
-
-%now interpolating for 1000 values of x and finding values of yi(y-interpolated)
-xi = linspace(x(1),x(end),1000);
-xi = xi';
-
-
-%preparing G1 matrix (1000x5)
-for i=1:1000
-    for j=1:N
-        G1(i,j) = xi(i).^(j-1);
+%% Examples
+if 1
+    clear all
+    close all
+    n = 10;
+    xi = linspace(-1,1,n);
+    x = linspace(-1,1,1000);
+    
+    if 1
+        % Create Lagrange polynomials
+        for j =1:n
+            yi = zeros(n,1);
+            yi(j) = 1; % L3
+            
+            % lagrange
+            y =lagrange(xi,yi,x);
+            plot(x,y,'Linewidth',2,'Displayname','lagrange');
+        end
     end
+    
+    %==========================
+    % Test Example
+    yi = [3 2 2 1 0 -3 -4 1 2 4]; % for n=10
+    
+    %plot
+    plot(xi, yi, 'o','MarkerSize',10,'MarkerFaceColor','r','MarkerEdgeColor','k')
+    hold on
+    
+    % lagrange
+    y =lagrange(xi,yi,x);
+    plot(x,y,'Linewidth',2,'Displayname','lagrange');
+    
+    % linear
+    y = interp1(xi,yi,x);
+    plot(x,y,'b','Linewidth',2,'Displayname','linear')
+    
+    % spline
+    y = interp1(xi,yi,x,'spline');
+    plot(x,y,'g','Linewidth',2,'Displayname','in-built cubic spline')
+    
+    legend
+    ax = gca;
+    ax.FontSize = 16;
 end
 
-%finding values of yi(y-interpolated)
-yi = G1*m; %yi a column vector(1000x1)
-
-%pplotting the values 
-plot(x,y,'o');
-hold on
-plot(xi,yi);
 
 
+function [val] = lagrange(xi,yi,x)
+% Function for performing lagrange interpolation
+% INPUT
+%   x       interpolation points
+%   f       function values
+%   y       evaluate the interpolation polynomial at points y
+
+%
+n = length(xi);
+%
+% if x is a row vector, transform it to a column vector
+%
+if size(xi,1)==1
+    xi = xi';
+end
+%
+% compute weights using the interpolation points
+%
+for j=1:n
+    dif = xi(j) - [xi(1:j-1);xi(j+1:n)];
+    w(j) = 1/prod(dif);
+end
+
+m = length(x);
+val = zeros(m,1);
+%
+%  evaluate the interpolation polynomial at y
+%
+for i = 1:m
+    sum=0;
+    for j=1:n
+        diff2=x(i)-[xi(1:j-1);xi(j+1:n)];
+        pro=prod(diff2);
+        v(j)=pro*w(j);
+        sum=sum + v(j)*yi(j);
+ 
+    end
+    val(i)=sum;      
+end
+end
